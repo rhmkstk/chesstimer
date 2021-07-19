@@ -182,8 +182,10 @@ export default {
 
 <style scoped>
 .timer {
-  width: 100vw;
-  height: 100vh;
+  max-width: 100vw;
+  max-height: 100vh;
+  min-width: 100vw;
+  min-height: 100vh;
   display: grid;
   grid-auto-rows: 1fr 1fr;
   justify-items: center;
@@ -200,7 +202,7 @@ export default {
   border-bottom: 4px solid white;
 }
 p.time {
-  font-size: 100px;
+  font-size: 90px;
   font-weight: bold;
 }
 .active {

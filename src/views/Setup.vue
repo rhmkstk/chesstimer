@@ -49,12 +49,12 @@ export default {
   gap: 20px;
 }
 .setup div.box {
-  font-size: 30px;
+  font-size: 27px;
   font-weight: bold;
   border: 1px solid white;
   border-radius: 10px;
-  width: 120px;
-  height: 80px;
+  width: 90px;
+  height: 90px;
   background: #191818;
 }
 div.box .link{
