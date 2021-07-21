@@ -1,9 +1,8 @@
 <script>
 export default {
-  name: "Timer",
+  name: "ChessTimer",
   data() {
     return {
-      duration: 0,
       plus: 0,
       winner: "",
       isGameOver: false,
@@ -23,72 +22,44 @@ export default {
         timer: null,
         isFirstMove: true,
       },
-      playerInitalValues: {
-        duration: this.duration,
-        minutes: 0,
-        seconds: 0,
-        isRunning: false,
-        timer: null,
-        isFirstMove: true,
-      },
     };
   },
   methods: {
-    startTimer() {
-      // stop other player timer
-      this.playerTwo.isRunning = false;
-      clearInterval(this.playerTwo.timer);
-      this.playerTwo.timer = null;
-      // start timer
-      let player = this.playerOne;
-      let otherPlayer = this.playerTwo;
-      player.isRunning = true;
+    handleStopTime(plyr) {
+      const player = this[plyr];
+      player.isRunning = false;
+      clearInterval(player.timer);
+      player.timer = null;
+    },
+    handlePlusDuration(plyr) {
+      const player = this[plyr];
       if (!player.isFirstMove) {
-        otherPlayer.duration = otherPlayer.duration + parseInt(this.plus);
+        player.duration = parseInt(player.duration) + parseInt(this.plus);
       }
       player.isFirstMove = false;
+    },
+    handleCountDown(plyr) {
+      const player = this[plyr];
+      player.isRunning = true;
       if (!player.timer) {
         player.timer = setInterval(() => {
           if (player.duration > 0) {
             player.duration--;
           } else {
             this.isGameOver = true;
-            this.winner = "playerOne";
+            this.winner = plyr;
             clearInterval(player.timer);
           }
         }, 1000);
       }
     },
-    startTimerTwo() {
-      this.playerOne.isRunning = false;
-      clearInterval(this.playerOne.timer);
-      this.playerOne.timer = null;
-      let player = this.playerTwo;
-      let otherPlayer = this.playerOne;
-      player.isRunning = true;
-      if (!player.isFirstMove) {
-        otherPlayer.duration = otherPlayer.duration + parseInt(this.plus);
-      }
-      player.isFirstMove = false;
-      if (!player.timer) {
-        player.timer = setInterval(() => {
-          if (player.duration > 0) {
-            player.duration--;
-          } else {
-            this.isGameOver = true;
-            this.winner = "playerTwo";
-            clearInterval(player.timer);
-          }
-        }, 1000);
-      }
+    chessTimer(playerMadeMove, ActivePlayer) {
+      this.handleStopTime(playerMadeMove);
+      this.handlePlusDuration(playerMadeMove);
+      this.handleCountDown(ActivePlayer);
     },
     resetTempo() {
       this.$router.go();
-    },
-    stop() {
-      this.playerOne.isRunning = false;
-      clearInterval(this.playerOne.timer);
-      this.playerOne.timer = null;
     },
     parseMins(minute) {
       return parseInt(minute / 60, 10);
@@ -99,31 +70,39 @@ export default {
     prettyTime(time) {
       return time < 10 ? "0" + time : time;
     },
+    setSelectedTempo() {
+      const tempo = this.$route.params.tempo.split("+");
+      const minute = parseInt(tempo[0]) * 60;
+      this.playerOne.duration = minute;
+      this.playerTwo.duration = minute;
+      this.plus = parseInt(tempo[1]);
+      
+    },
   },
   computed: {
-    compPlayerOne() {
+    durationsPlayerOne() {
       let duration = this.playerOne.duration;
       return {
         min: this.prettyTime(this.parseMins(duration)),
         sec: this.prettyTime(this.parseSecs(duration)),
       };
     },
-    compPlayerTwo() {
+    durationsPlayerTwo() {
       let duration = this.playerTwo.duration;
       return {
         min: this.prettyTime(this.parseMins(duration)),
         sec: this.prettyTime(this.parseSecs(duration)),
       };
     },
-    setPlOneBgClasses() {
-      return this.playerOne.duration < 10
+    bgClassesPlayerOne() {
+      return this.playerOne.duration < 11
         ? "danger"
         : this.playerOne.isRunning
         ? "active"
         : "";
     },
-    setPlTwoBgClasses() {
-      return this.playerTwo.duration < 10
+    bgClassesPlayerTwo() {
+      return this.playerTwo.duration < 11
         ? "danger"
         : this.playerTwo.isRunning
         ? "active"
@@ -131,22 +110,17 @@ export default {
     },
   },
   created() {
-    const tempo = this.$route.params.tempo.split("+");
-    const minute = parseInt(tempo[0]) * 60;
-    this.playerOne.duration = minute;
-    this.playerTwo.duration = minute;
-    this.plus = parseInt(tempo[1]);
-    console.log(tempo);
+    this.setSelectedTempo();
   },
 };
 </script>
 <template>
   <div class="timer">
     <button
-      class="section"
-      :disabled="playerTwo.isRunning"
-      :class="setPlOneBgClasses"
-      @click="startTimerTwo"
+      class="section rotate"
+      :disabled="playerTwo.isRunning || isGameOver"
+      :class="bgClassesPlayerOne"
+      @click="chessTimer('playerOne', 'playerTwo')"
     >
       <div v-if="isGameOver && winner == 'playerOne'" class="gameOver">
         <p>Diri kalamadın!</p>
@@ -157,16 +131,16 @@ export default {
       </div>
       <p v-else class="time">
         <router-link to="/" class="sendBack">GERİ</router-link>
-        {{ compPlayerOne.min }} : {{ compPlayerOne.sec }}
+        <span>{{ durationsPlayerOne.min }} : {{ durationsPlayerOne.sec }}</span>
       </p>
     </button>
     <button
       class="section"
-      :disabled="playerOne.isRunning"
-      :class="setPlTwoBgClasses"
-      @click="startTimer"
+      :disabled="playerOne.isRunning || isGameOver"
+      :class="bgClassesPlayerTwo"
+      @click="chessTimer('playerTwo', 'playerOne')"
     >
-      <div v-if="isGameOver && winner == 'playerTwo' " class="gameOver">
+      <div v-if="isGameOver && winner == 'playerTwo'" class="gameOver">
         <p>Diri kalamadın!</p>
         <button @click="resetTempo">Süreyi Yenile</button>
         <router-link to="/">
@@ -174,7 +148,7 @@ export default {
         </router-link>
       </div>
       <p v-else class="time">
-        {{ compPlayerTwo.min }} : {{ compPlayerTwo.sec }}
+        {{ durationsPlayerTwo.min }} : {{ durationsPlayerTwo.sec }}
       </p>
     </button>
   </div>
@@ -201,8 +175,12 @@ export default {
 .section:first-child {
   border-bottom: 4px solid white;
 }
+.section.rotate p.time span{
+  display: block;
+  transform: rotate(180deg);
+}
 p.time {
-  font-size: 90px;
+  font-size: 110px;
   font-weight: bold;
 }
 .active {
@@ -216,10 +194,14 @@ p.time {
   height: 100%;
   background: #191818;
   font-size: 45px;
-  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }
 .gameOver button {
-  width: 100%;
+  /* width: 100%; */
+  display: block;
   font-size: inherit;
   margin: 60px 0 40px 0;
 }
