@@ -78,6 +78,9 @@ export default {
       this.plus = parseInt(tempo[1]);
       
     },
+    selm(){
+      console.log('hey..');
+    }
   },
   computed: {
     durationsPlayerOne() {
